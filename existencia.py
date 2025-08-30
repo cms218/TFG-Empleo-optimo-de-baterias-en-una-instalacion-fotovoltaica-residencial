@@ -1,6 +1,6 @@
 import os
 from funciones import precios
-from funciones import generación2
+from funciones import generación
 from funciones import co2
 
 def comprobar_existencia(año_generación, archivo_salida_precios, carpeta_precios, archivo_salida_generación, ruta_archivo_generación, nombre_origen_co2, archivo_co2):
@@ -32,3 +32,4 @@ def comprobar_existencia(año_generación, archivo_salida_precios, carpeta_preci
     else:
         print(f"El archivo '{archivo_co2}' no existe. Generándolo...")
         df_co2 = co2.crear_co2(nombre_origen_co2, archivo_co2)
+
