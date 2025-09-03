@@ -7,8 +7,17 @@ from funciones.factura import calcular_factura
 
 def bateria_simple(df, capacidad_max, carga_inicial, potencia_max_carga, potencia_max_descarga, eficiencia_carga, eficiencia_descarga, potencia_contratada):
 
-    carga_bateria = carga_inicial
-    historial = []
+    # Extraer las columnas de pandas a arrays de numpy para un acceso rápido.
+    generacion_array = df["P"].to_numpy()
+    consumo_array = df["Consumo kWh"].to_numpy()
+    
+    n_horas = len(df)
+
+    # Preparamos listas de para almacenar los resultados
+    historial_estado = []
+    historial_uso_bateria = []
+    historial_uso_red = []
+    historial_vertido = []
 
     for i, row in df.iterrows():
         estado_inicial = carga_bateria
@@ -27,30 +36,39 @@ def bateria_simple(df, capacidad_max, carga_inicial, potencia_max_carga, potenci
             energia_almacenable = energia_disponible * eficiencia_carga
             espacio_libre = capacidad_max - carga_bateria
             energia_a_cargar = min(energia_almacenable, espacio_libre)
+            
             carga_bateria += energia_a_cargar
             uso_bateria = energia_a_cargar / eficiencia_carga  # energía realmente tomada del excedente
             vertido = excedente - uso_bateria
+            uso_red = 0
         else:
             # Hay déficit: descargar batería
             demanda = -excedente
             energia_posible = min(potencia_max_descarga, carga_bateria * eficiencia_descarga)
             energia_a_usar = min(demanda, energia_posible)
+            
             carga_bateria -= energia_a_usar / eficiencia_descarga
             uso_bateria = -energia_a_usar
             uso_red = demanda - energia_a_usar
+            vertido = 0
 
             if potencia_contratada is not None:
                 uso_red = min(uso_red, potencia_contratada)  # no exceder lo contratado
 
-        historial.append({
-            "Estado_bat_kWh": estado_inicial,
-            "E_bat_kWh": uso_bateria,
-            "Red compra_kWh": uso_red,
-            "Red venta_kWh": vertido,
-        })
+        # Añadir los resultados a las listas
+        historial_estado.append(estado_inicial)
+        historial_uso_bateria.append(uso_bateria)
+        historial_uso_red.append(uso_red)
+        historial_vertido.append(vertido)
 
-    resultados_df = pd.DataFrame(historial, index=df.index)
-    return pd.concat([df, resultados_df], axis=1)
+    resultados_df = pd.DataFrame({
+        "Estado_bat_kWh": historial_estado,
+        "E_bat_kWh": historial_uso_bateria,
+        "Red compra_kWh": historial_uso_red,
+        "Red venta_kWh": historial_vertido,
+    }, index=df.index)
+    
+    return pd.concat([df, resultados_df], axis=1)    # Añadir los resultados del caso analizado al df que recopila todo
 
 def main(potencia_nominal, C_bateria):  
     año = 2023
