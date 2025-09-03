@@ -22,6 +22,7 @@ def optimizar(df, C_bateria, P_max, P_contratada, ef_carga, ef_descarga, epsilon
     precio_compra = df['PVPC_total'].values
     precio_venta = df['Precio_energía_excedentaria'].values
     T = len(consumo)
+    Delta_t = 1    # Periodo horario
 
     def energia_real(E_bat):
         # E_bat>0 → carga
@@ -58,7 +59,7 @@ def optimizar(df, C_bateria, P_max, P_contratada, ef_carga, ef_descarga, epsilon
     restric = {'type': 'ineq', 'fun': restricciones}
 
     # Límites por hora para E_bat
-    bounds = [(-P_max, P_max)] * T
+    bounds = [(-P_max*Delta_t, P_max*Delta_t)] * T
 
     # Condición inicial: batería sin uso
     E_bat_0 = np.zeros(T)
@@ -96,3 +97,4 @@ def optimizar(df, C_bateria, P_max, P_contratada, ef_carga, ef_descarga, epsilon
         }, index=df.index[:len(E_bat_opt)])
 
     return res, df_opt
+
